@@ -4,6 +4,8 @@ This project uses Quarkus, the Supersonic Subatomic Java Framework.
 
 If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
 
+Junie AI built this entirely.
+
 ## Running the application in dev mode
 
 You can run your application in dev mode that enables live coding using:
@@ -74,6 +76,28 @@ Output:
 
 CI builds:
 - GitHub Actions workflow .github/workflows/windows-installer.yml builds the installer on windows-latest and uploads it as an artifact named "windows-installer" containing target/*.exe.
+
+## Data persistence
+
+- Speakers and all app properties (auto-stop, title, UI sizes for admin and audience) are persisted to a JSON file.
+- Default location: ./data/speakers.json (configurable via `speakers.file` in application.properties).
+- Backward compatible: if an older file contains just an array of speakers, it will be loaded; saving will migrate to an object with properties + speakers.
+
+Example structure:
+
+```
+{
+  "version": 1,
+  "autoStopOnStart": true,
+  "title": "My Event",
+  "uiCardWidth": 360,
+  "uiTextScale": 100,
+  "uiActionSize": 56,
+  "uiCardWidthMain": 360,
+  "uiTextScaleMain": 100,
+  "speakers": [ { ... } ]
+}
+```
 
 ## Provided Code
 

@@ -15,10 +15,13 @@ function Write-Err($msg)  { Write-Host "[ERROR] $msg" -ForegroundColor Red }
 $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Path | Split-Path -Parent
 Set-Location $repoRoot
 
+# Resolve Maven command (prefer Windows wrapper)
+$mvnCmd = if (Test-Path ".\mvnw.cmd") { ".\mvnw.cmd" } elseif (Test-Path "./mvnw") { "./mvnw" } else { "mvn" }
+
 # Resolve version from Maven if not provided
 if ($AppVersion -eq "0.0.0") {
   try {
-    $AppVersion = (& ./mvnw -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive org.codehaus.mojo:exec-maven-plugin:3.5.0:exec)
+    $AppVersion = (& $mvnCmd -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive org.codehaus.mojo:exec-maven-plugin:3.5.0:exec)
   } catch {
     Write-Warn "Could not resolve version from Maven, using 1.0.0"
     $AppVersion = "1.0.0"
@@ -26,7 +29,7 @@ if ($AppVersion -eq "0.0.0") {
 }
 
 Write-Info "Building $AppName $AppVersion (uber-jar)"
-& ./mvnw -B -ntp -Dquarkus.package.jar.type=uber-jar package
+& $mvnCmd -B -ntp -Dquarkus.package.jar.type=uber-jar package
 
 # Find the runner jar
 $jar = Get-ChildItem -Path target -Filter "*-runner.jar" | Select-Object -First 1

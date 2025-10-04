@@ -6,6 +6,13 @@
   "elapsedMillis" : 542103,
   "running" : false
 }, {
+  "id" : "72192081-530a-43ab-bbdf-7202a30ec53b",
+  "name" : "Rex",
+  "faceUrl" : "",
+  "imageFilename" : "72192081-530a-43ab-bbdf-7202a30ec53b.png",
+  "elapsedMillis" : 174398,
+  "running" : false
+}, {
   "id" : "70c3107d-6c45-41d1-bd80-446e7dfe5a42",
   "name" : "Tomas",
   "faceUrl" : "",
@@ -29,13 +36,6 @@
 }, {
   "id" : "46f02097-2d2a-46d2-9adf-05527f05d571",
   "name" : "Décio Matias",
-  "faceUrl" : "",
-  "imageFilename" : null,
-  "elapsedMillis" : 0,
-  "running" : false
-}, {
-  "id" : "026c3b1d-92ed-42e4-8775-46d1234bc1cb",
-  "name" : "Teste",
   "faceUrl" : "",
   "imageFilename" : null,
   "elapsedMillis" : 0,

@@ -43,7 +43,7 @@
 <header>
   <div class="header-title" id="headerTitle"></div>
   <div class="header-actions">
-    <nav><a href="/">audience view</a></nav>
+    <button id="audienceBtn" class="icon" title="Audience view"><i class="fa-solid fa-tv"></i></button>
     <button id="editModeBtn" class="icon secondary" title="Toggle edit mode"><i class="fa-solid fa-pen-to-square"></i></button>
     <button id="fullscreenBtn" class="icon" title="Toggle fullscreen"><i class="fa-solid fa-expand"></i></button>
   </div>
@@ -133,6 +133,7 @@
   const saveTitleBtn = document.getElementById('saveTitle');
   const fullscreenBtn = document.getElementById('fullscreenBtn');
   const editModeBtn = document.getElementById('editModeBtn');
+  const audienceBtn = document.getElementById('audienceBtn');
   const tabPrefsBtn = document.getElementById('tabPrefsBtn');
   const tabManageBtn = document.getElementById('tabManageBtn');
   const prefsPanel = document.getElementById('prefsPanel');
@@ -164,8 +165,15 @@
     // Manage tab/button visibility
     if (tabManageBtn) tabManageBtn.classList.toggle('hidden', !editMode);
     if (managePanel) managePanel.classList.toggle('hidden', !editMode || !tabManageBtn.classList.contains('active'));
-    // If leaving edit mode while Manage tab active, switch to Preferences
-    if (!editMode && tabManageBtn && tabManageBtn.classList.contains('active')) {
+    // Preferences tab/button visibility (only in edit mode)
+    if (tabPrefsBtn) tabPrefsBtn.classList.toggle('hidden', !editMode);
+    if (prefsPanel) prefsPanel.classList.toggle('hidden', !editMode || !tabPrefsBtn.classList.contains('active'));
+    // If leaving edit mode while any edit-only tab active, ensure nothing is shown
+    if (!editMode) {
+      if (tabPrefsBtn) tabPrefsBtn.classList.remove('active');
+      if (tabManageBtn) tabManageBtn.classList.remove('active');
+    } else {
+      // entering edit mode: default to Preferences
       showTab('prefs');
     }
     // Button style
@@ -194,6 +202,7 @@
   if (editModeBtn) {
     editModeBtn.addEventListener('click', () => { editMode = !editMode; applyEditMode(); });
   }
+  if (audienceBtn) audienceBtn.addEventListener('click', () => { window.location.href = '/'; });
   if (tabPrefsBtn) tabPrefsBtn.addEventListener('click', () => showTab('prefs'));
   if (tabManageBtn) tabManageBtn.addEventListener('click', () => showTab('manage'));
 

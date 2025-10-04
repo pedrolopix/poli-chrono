@@ -101,38 +101,4 @@
         </plugins>
     </build>
 
-    <profiles>
-        <profile>
-            <id>windows-release</id>
-            <activation>
-                <os>
-                    <family>windows</family>
-                </os>
-            </activation>
-            <properties>
-                <!-- Build a single runnable jar for JPackage -->
-                <quarkus.package.jar.type>uber-jar</quarkus.package.jar.type>
-            </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.jreleaser</groupId>
-                        <artifactId>jreleaser-maven-plugin</artifactId>
-                        <version>1.14.0</version>
-                        <executions>
-                            <execution>
-                                <id>jreleaser-assemble</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>assemble</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
-
-
 </project>

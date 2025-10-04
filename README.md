@@ -55,25 +55,25 @@ If you want to learn more about building native executables, please consult <htt
 
 ## Windows installer (bundled Java runtime)
 
-This project can build a Windows installer using the io.github.fvarrui:javapackager Maven plugin, executed via a Windows-specific Maven profile. It packages the application together with a private Java runtime (no system Java required to run the app).
+This project can build a Windows installer using JReleaser's jpackage assembler, executed via a Windows-specific Maven profile. It packages the application together with a private Java runtime (no system Java required).
 
 Build the installer on Windows 10/11 with JDK 21 (Temurin recommended):
 
 ```powershell
 # From the repository root
-./mvnw -Dquarkus.package.jar.type=uber-jar -Pwindows-jpackage package
+./mvnw -B -ntp -Dquarkus.package.jar.type=uber-jar -Pwindows-release package
 ```
 
 What it does:
 - Builds an uber-jar (Quarkus runner jar).
-- Uses the javapackager plugin to produce a self-contained .exe installer that bundles a Java runtime.
+- Uses JReleaser + jpackage to produce a self-contained .exe installer that bundles a Java runtime.
 
 Output:
-- Installer EXE available under target/ (example: PoliChrono-1.0.0.exe).
+- Installer EXE available under target/ (example: Poli Chrono-1.0-SNAPSHOT.exe or similar depending on version).
 - The installed application includes its own Java and does not depend on system Java.
 
 CI builds:
-- A GitHub Actions workflow .github/workflows/windows-installer.yml builds the installer on windows-latest and uploads it as an artifact.
+- GitHub Actions workflow .github/workflows/windows-installer.yml builds the installer on windows-latest and uploads it as an artifact named "windows-installer" containing target/*.exe.
 
 ## Provided Code
 

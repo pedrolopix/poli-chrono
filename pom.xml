@@ -78,35 +78,16 @@
             </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>${compiler-plugin.version}</version>
+                <version>3.13.0</version>
                 <configuration>
                     <parameters>true</parameters>
                 </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>${surefire-plugin.version}</version>
+                <version>3.2.5</version>
                 <configuration>
                     <systemPropertyVariables>
-                        <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
-                        <maven.home>${maven.home}</maven.home>
-                    </systemPropertyVariables>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <version>${surefire-plugin.version}</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>integration-test</goal>
-                            <goal>verify</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <systemPropertyVariables>
-                        <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <maven.home>${maven.home}</maven.home>
                     </systemPropertyVariables>
@@ -115,63 +96,5 @@
         </plugins>
     </build>
 
-    <profiles>
-        <profile>
-            <id>native</id>
-            <activation>
-                <property>
-                    <name>native</name>
-                </property>
-            </activation>
-            <properties>
-                <quarkus.package.jar.enabled>false</quarkus.package.jar.enabled>
-                <skipITs>false</skipITs>
-                <quarkus.native.enabled>true</quarkus.native.enabled>
-            </properties>
-        </profile>
-        
-        <profile>
-            <id>windows-jpackage</id>
-            <activation>
-                <os>
-                    <family>Windows</family>
-                </os>
-            </activation>
-            <build> 
-                <plugins>
-                    <plugin>
-                        <groupId>io.github.fvarrui</groupId>
-                        <artifactId>javapackager</artifactId>
-                        <version>1.7.6</version>
-                        <executions>
-                            <execution>
-                                <id>javapackager-windows-exe</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>package</goal>
-                                </goals>
-                                <configuration>
-                                    <name>PoliChrono</name>
-                                    <displayName>PoliChrono</displayName>
-                                    <vendor>Lopix Labs</vendor>
-                                    <version>${project.version}</version>
-                                    <description>PoliChrono</description>
-                                    <platform>windows</platform>
-                                    <generateInstaller>true</generateInstaller>
-                                    <installerType>exe</installerType>
-                                    <bundleJre>true</bundleJre>
-                                    <jrePath>${java.home}</jrePath>
-                                    <inputDirectory>${project.build.directory}</inputDirectory>
-                                    <mainJar>${project.build.finalName}-runner.jar</mainJar>
-                                    <outputDirectory>${project.build.directory}</outputDirectory>
-                                    <winMenu>true</winMenu>
-                                    <winShortcut>true</winShortcut>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
+
 </project>

@@ -27,10 +27,10 @@ jobs:
       - name: Make Maven Wrapper executable (Git Bash compatibility)
         run: git update-index --chmod=+x mvnw
 
-      - name: Build Windows installer (.exe) via javapackager Maven plugin
+      - name: Build Windows installer (.exe) via Maven plugin
         shell: pwsh
         run: |
-          ./mvnw -B -ntp -Dquarkus.package.jar.type=uber-jar -Pwindows-jpackage package
+          ./mvnw -B -ntp -Dquarkus.package.jar.type=uber-jar -Pwindows-release package
 
       - name: Upload installer
         uses: actions/upload-artifact@v4

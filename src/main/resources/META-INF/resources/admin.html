@@ -45,8 +45,8 @@
 <header>
   <div class="header-title" id="headerTitle"></div>
   <div class="header-actions">
-    <button id="audienceBtn" class="icon" title="Audience view"><i class="fa-solid fa-tv"></i></button>
     <button id="editModeBtn" class="icon secondary" title="Toggle edit mode"><i class="fa-solid fa-pen-to-square"></i></button>
+    <button id="audienceBtn" class="icon" title="Audience view"><i class="fa-solid fa-tv"></i></button>
     <button id="fullscreenBtn" class="icon" title="Toggle fullscreen"><i class="fa-solid fa-expand"></i></button>
   </div>
 </header>
@@ -109,6 +109,9 @@
         </label>
       </div>
       <div class="row" style="margin-top:8px;">
+        <button id="resetAll" class="secondary" title="Reset all times to 0"><i class="fa-solid fa-rotate-left"></i> Reset all</button>
+      </div>
+      <div class="row" style="margin-top:8px;">
         <button id="forceReload" class="secondary" title="Force audience full reload"><i class="fa-solid fa-rotate-right"></i> Reload audience</button>
       </div>
     </div>
@@ -136,6 +139,7 @@
   const nameEl = document.getElementById('name');
   const imageInput = document.getElementById('imageFile');
   const stopAllBtn = document.getElementById('stopAll');
+  const resetAllBtn = document.getElementById('resetAll');
   const autoStopToggle = document.getElementById('autoStopToggle');
   const headerTitle = document.getElementById('headerTitle');
   const titleInput = document.getElementById('titleInput');
@@ -285,19 +289,16 @@
 
       const row = document.createElement('div');
       row.className = 'row';
-      const startBtn = document.createElement('button');
-      startBtn.className = 'icon action-btn';
-      startBtn.title = 'Start';
-      startBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
-      startBtn.onclick = async () => { await fetch(`/api/speakers/${sp.id}/start`, {method:'POST'}); };
-      const stopBtn = document.createElement('button');
-      stopBtn.className = 'icon secondary action-btn';
-      stopBtn.title = 'Stop';
-      stopBtn.innerHTML = '<i class="fa-solid fa-stop"></i>';
-      stopBtn.onclick = async () => { await fetch(`/api/speakers/${sp.id}/stop`, {method:'POST'}); };
+      const toggleBtn = document.createElement('button');
+      toggleBtn.className = 'icon action-btn' + (sp.running ? ' danger' : '');
+      toggleBtn.title = sp.running ? 'Stop' : 'Start';
+      toggleBtn.innerHTML = sp.running ? '<i class="fa-solid fa-stop"></i>' : '<i class="fa-solid fa-play"></i>';
+      toggleBtn.onclick = async () => {
+        const path = sp.running ? 'stop' : 'start';
+        await fetch(`/api/speakers/${sp.id}/${path}`, {method:'POST'});
+      };
 
-      row.appendChild(startBtn);
-      row.appendChild(stopBtn);
+      row.appendChild(toggleBtn);
       meta.appendChild(nm);
       meta.appendChild(tm);
       meta.appendChild(row);
@@ -334,6 +335,9 @@
   };
   document.getElementById('clear').onclick = () => { idEl.value = ''; nameEl.value = ''; try { imageInput.value = ''; } catch(e) {} };
   stopAllBtn.onclick = async () => { await fetch('/api/speakers/stopAll', {method:'POST'}); };
+  if (resetAllBtn) {
+    resetAllBtn.onclick = async () => { await fetch('/api/speakers/resetAll', {method:'POST'}); };
+  }
 
   // Auto-stop toggle wiring
   async function loadAutoStop(){

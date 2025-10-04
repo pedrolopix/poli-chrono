@@ -88,6 +88,14 @@ public class SpeakersResource {
         return Response.ok().build();
     }
 
+    @POST
+    @Path("/resetAll")
+    public Response resetAll() {
+        store.resetAll();
+        ws.broadcastState();
+        return Response.ok().build();
+    }
+
     @GET
     @Path("/autoStop")
     public Map<String, Object> getAutoStop() {

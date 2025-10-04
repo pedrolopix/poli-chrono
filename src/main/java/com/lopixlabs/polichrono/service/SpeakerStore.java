@@ -151,6 +151,18 @@ public class SpeakerStore {
         if (changed) persist();
     }
 
+    public synchronized void resetAll() {
+        boolean changed = false;
+        for (Speaker sp : speakers) {
+            long before = sp.getElapsedMillis();
+            if (sp.isRunning() || before != 0L) {
+                sp.reset();
+                changed = true;
+            }
+        }
+        if (changed) persist();
+    }
+
     public synchronized void reorder(List<String> ids) {
         if (ids == null || ids.isEmpty()) return;
         Map<String, Speaker> byId = new LinkedHashMap<>();

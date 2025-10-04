@@ -6,36 +6,37 @@ import com.lopixlabs.polichrono.model.Speaker;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @ApplicationScoped
 public class SpeakerStore {
 
+    private final List<Speaker> speakers = new CopyOnWriteArrayList<>();
     @ConfigProperty(name = "speakers.file", defaultValue = "./data/speakers.json")
     String filePath;
-
     @Inject
     ObjectMapper mapper;
-
     @ConfigProperty(name = "images.dir", defaultValue = "./data/images")
     String imagesDir;
-
     @ConfigProperty(name = "chrono.autostop", defaultValue = "true")
     boolean defaultAutoStop;
-
     @ConfigProperty(name = "chrono.title", defaultValue = "")
     String defaultTitle;
-
     private volatile boolean autoStopOnStart;
     private volatile String title;
-    // UI settings (not persisted to file): card width in px and text scale in %
+    // UI settings (persisted to file)
     private volatile int uiCardWidth = 360;
     private volatile int uiTextScale = 100;
     // Admin action button size in px (Start/Stop); configurable via UI
@@ -43,8 +44,6 @@ public class SpeakerStore {
     // Audience (main page) UI settings: separate controls from admin
     private volatile int uiCardWidthMain = 360;
     private volatile int uiTextScaleMain = 100;
-
-    private final List<Speaker> speakers = new CopyOnWriteArrayList<>();
 
     public List<Speaker> list() {
         // return a copy with computed elapsed
@@ -89,7 +88,8 @@ public class SpeakerStore {
                 try {
                     Path img = Path.of(imagesDir).resolve(s.getImageFilename());
                     Files.deleteIfExists(img);
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
             speakers.remove(s);
             persist();
@@ -137,8 +137,14 @@ public class SpeakerStore {
         }
     }
 
-    public boolean isAutoStopOnStart() { return autoStopOnStart; }
-    public void setAutoStopOnStart(boolean autoStopOnStart) { this.autoStopOnStart = autoStopOnStart; }
+    public boolean isAutoStopOnStart() {
+        return autoStopOnStart;
+    }
+
+    public void setAutoStopOnStart(boolean autoStopOnStart) {
+        this.autoStopOnStart = autoStopOnStart;
+        persist();
+    }
 
     public synchronized void stopAll() {
         boolean changed = false;
@@ -148,7 +154,9 @@ public class SpeakerStore {
                 changed = true;
             }
         }
-        if (changed) persist();
+        if (changed) {
+            persist();
+        }
     }
 
     public synchronized void resetAll() {
@@ -160,17 +168,25 @@ public class SpeakerStore {
                 changed = true;
             }
         }
-        if (changed) persist();
+        if (changed) {
+            persist();
+        }
     }
 
     public synchronized void reorder(List<String> ids) {
-        if (ids == null || ids.isEmpty()) return;
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
         Map<String, Speaker> byId = new LinkedHashMap<>();
-        for (Speaker s : speakers) byId.put(s.getId(), s);
+        for (Speaker s : speakers) {
+            byId.put(s.getId(), s);
+        }
         List<Speaker> reordered = new ArrayList<>();
         for (String id : ids) {
             Speaker s = byId.remove(id);
-            if (s != null) reordered.add(s);
+            if (s != null) {
+                reordered.add(s);
+            }
         }
         // append any remaining speakers not present in ids preserving their current order
         reordered.addAll(byId.values());
@@ -183,23 +199,67 @@ public class SpeakerStore {
         return speakers.stream().anyMatch(Speaker::isRunning);
     }
 
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title == null ? "" : title; }
+    public String getTitle() {
+        return title;
+    }
 
-    public int getUiCardWidth() { return uiCardWidth; }
-    public void setUiCardWidth(int uiCardWidth) { this.uiCardWidth = Math.max(200, Math.min(1000, uiCardWidth)); }
+    public void setTitle(String title) {
+        this.title = title == null ? "" : title;
+        persist();
+    }
 
-    public int getUiTextScale() { return uiTextScale; }
-    public void setUiTextScale(int uiTextScale) { this.uiTextScale = Math.max(50, Math.min(200, uiTextScale)); }
+    public int getUiCardWidth() {
+        return uiCardWidth;
+    }
 
-    public int getUiActionSize() { return uiActionSize; }
-    public void setUiActionSize(int uiActionSize) { this.uiActionSize = Math.max(32, Math.min(96, uiActionSize)); }
+    public void setUiCardWidth(int uiCardWidth) {
+        this.uiCardWidth = Math.max(200, Math.min(1000, uiCardWidth));
+        persist();
+    }
 
-    public int getUiCardWidthMain() { return uiCardWidthMain; }
-    public void setUiCardWidthMain(int uiCardWidthMain) { this.uiCardWidthMain = Math.max(200, Math.min(1000, uiCardWidthMain)); }
+    public int getUiTextScale() {
+        return uiTextScale;
+    }
 
-    public int getUiTextScaleMain() { return uiTextScaleMain; }
-    public void setUiTextScaleMain(int uiTextScaleMain) { this.uiTextScaleMain = Math.max(50, Math.min(200, uiTextScaleMain)); }
+    public void setUiTextScale(int uiTextScale) {
+        this.uiTextScale = Math.max(50, Math.min(200, uiTextScale));
+        persist();
+    }
+
+    public int getUiActionSize() {
+        return uiActionSize;
+    }
+
+    public void setUiActionSize(int uiActionSize) {
+        this.uiActionSize = Math.max(32, Math.min(96, uiActionSize));
+        persist();
+    }
+
+    public int getUiCardWidthMain() {
+        return uiCardWidthMain;
+    }
+
+    public void setUiCardWidthMain(int uiCardWidthMain) {
+        this.uiCardWidthMain = Math.max(200, Math.min(1000, uiCardWidthMain));
+        persist();
+    }
+
+    public int getUiTextScaleMain() {
+        return uiTextScaleMain;
+    }
+
+    public void setUiTextScaleMain(int uiTextScaleMain) {
+        this.uiTextScaleMain = Math.max(50, Math.min(200, uiTextScaleMain));
+        persist();
+    }
+
+    private int parseIntOrDefault(Object v, int def) {
+        try {
+            return v == null ? def : Integer.parseInt(String.valueOf(v));
+        } catch (Exception e) {
+            return def;
+        }
+    }
 
     @PostConstruct
     void init() {
@@ -208,11 +268,34 @@ public class SpeakerStore {
         try {
             Path path = Path.of(filePath);
             if (!Files.exists(path)) {
-                if (path.getParent() != null) Files.createDirectories(path.getParent());
+                if (path.getParent() != null) {
+                    Files.createDirectories(path.getParent());
+                }
+                // initialize empty legacy array for backward compatibility
                 Files.writeString(path, "[]");
             }
-            String json = Files.readString(path);
-            List<Speaker> loaded = mapper.readValue(json, new TypeReference<List<Speaker>>(){ });
+            String json = Files.readString(path).trim();
+            List<Speaker> loaded;
+            // new format: object with properties + speakers
+            Map<String, Object> state = mapper.readValue(json, new TypeReference<Map<String, Object>>() {
+            });
+            Object vAuto = state.get("autoStopOnStart");
+            if (vAuto instanceof Boolean b) {
+                autoStopOnStart = b;
+            } else if (vAuto != null) {
+                autoStopOnStart = Boolean.parseBoolean(String.valueOf(vAuto));
+            }
+            Object vTitle = state.get("title");
+            title = vTitle == null ? defaultTitle : String.valueOf(vTitle);
+            uiCardWidth = parseIntOrDefault(state.get("uiCardWidth"), uiCardWidth);
+            uiTextScale = parseIntOrDefault(state.get("uiTextScale"), uiTextScale);
+            uiActionSize = parseIntOrDefault(state.get("uiActionSize"), uiActionSize);
+            uiCardWidthMain = parseIntOrDefault(state.get("uiCardWidthMain"), uiCardWidthMain);
+            uiTextScaleMain = parseIntOrDefault(state.get("uiTextScaleMain"), uiTextScaleMain);
+            Object sp = state.get("speakers");
+            loaded = mapper.convertValue(sp == null ? List.of() : sp, new TypeReference<List<Speaker>>() {
+            });
+
             // sanitize
             for (Speaker s : loaded) {
                 s.setRunning(false);
@@ -230,10 +313,12 @@ public class SpeakerStore {
         try {
             Path path = Path.of(filePath);
             if (!Files.exists(path)) {
-                if (path.getParent() != null) Files.createDirectories(path.getParent());
+                if (path.getParent() != null) {
+                    Files.createDirectories(path.getParent());
+                }
             }
-            // save without volatile fields
-            List<Map<String, Object>> simple = new ArrayList<>();
+            // save complete state (properties + simplified speakers)
+            List<Map<String, Object>> simpleSpeakers = new ArrayList<>();
             for (Speaker s : speakers) {
                 Map<String, Object> m = new LinkedHashMap<>();
                 m.put("id", s.getId());
@@ -242,12 +327,22 @@ public class SpeakerStore {
                 m.put("imageFilename", s.getImageFilename());
                 m.put("elapsedMillis", s.getElapsedMillis());
                 m.put("running", false); // persisted as stopped
-                simple.add(m);
+                simpleSpeakers.add(m);
             }
-            String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(simple);
+            Map<String, Object> state = new LinkedHashMap<>();
+            state.put("version", 1);
+            state.put("autoStopOnStart", autoStopOnStart);
+            state.put("title", title);
+            state.put("uiCardWidth", uiCardWidth);
+            state.put("uiTextScale", uiTextScale);
+            state.put("uiActionSize", uiActionSize);
+            state.put("uiCardWidthMain", uiCardWidthMain);
+            state.put("uiTextScaleMain", uiTextScaleMain);
+            state.put("speakers", simpleSpeakers);
+            String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(state);
             Files.writeString(path, json);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to persist speakers", e);
+            throw new RuntimeException("Failed to persist state", e);
         }
     }
 }

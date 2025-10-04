@@ -34,6 +34,5 @@ jobs:
         with:
           name: quarkus-app
           path: |
-            target/quarkus-app/**
             target/*-runner.jar
           if-no-files-found: ignore

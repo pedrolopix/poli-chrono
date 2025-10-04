@@ -6,14 +6,16 @@
   <title>Admin</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <style>
+    :root { --card-width: 360px; --text-scale: 1; }
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; background:#0b0b0b; color:#eee; }
     header { position:relative; padding: 12px 16px; border-bottom: 1px solid #333; display:flex; align-items:center; justify-content:space-between;}
     .header-title { position:absolute; left:50%; transform: translateX(-50%); font-weight:700; font-size: clamp(1.3rem, 2.5vw, 2rem); }
     main { padding: 16px; display:grid; grid-template-columns: 1fr 320px; gap: 16px; }
-    .list { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 16px; }
+    .list { display: grid; grid-template-columns: repeat(auto-fit, minmax(var(--card-width, 360px), 1fr)); gap: 16px; }
     .card { position:relative; background:#161616; border:1px solid #333; border-radius:12px; padding:16px; display:flex; gap:16px; align-items:center; }
     img { width: 96px; height:96px; object-fit: cover; border-radius: 8px; background:#222; }
-    .name { font-weight:700; }
+    .name { font-weight:700; font-size: calc(1rem * var(--text-scale, 1)); }
+    .time { font-size: calc(1.1rem * var(--text-scale, 1)); font-weight:700; }
     .row { display:flex; gap:8px; align-items:center; flex-wrap: wrap; }
     .icon { width:40px; height:40px; padding:0; display:grid; place-items:center; border-radius:8px; }
     .icon i { pointer-events:none; }
@@ -51,6 +53,18 @@
       <input id="titleInput" placeholder="Title (optional)" style="max-width:420px;flex:1;"/>
       <button id="saveTitle" class="secondary" title="Save title"><i class="fa-solid fa-floppy-disk"></i></button>
     </div>
+    <div class="row" style="margin-bottom:16px; gap:16px; flex-wrap:wrap; align-items:center;">
+      <label style="display:flex; align-items:center; gap:8px; margin:0;">
+        Card width
+        <input id="widthRange" type="range" min="280" max="600" step="10" style="width:220px;">
+        <span id="widthVal" style="min-width:48px; text-align:right; color:#aaa; font-variant-numeric: tabular-nums;">360px</span>
+      </label>
+      <label style="display:flex; align-items:center; gap:8px; margin:0;">
+        Text size
+        <input id="textRange" type="range" min="80" max="160" step="5" style="width:220px;">
+        <span id="textVal" style="min-width:48px; text-align:right; color:#aaa; font-variant-numeric: tabular-nums;">100%</span>
+      </label>
+    </div>
     <div id="list" class="list"></div>
   </section>
   <aside>
@@ -80,6 +94,10 @@
   const titleInput = document.getElementById('titleInput');
   const saveTitleBtn = document.getElementById('saveTitle');
   const fullscreenBtn = document.getElementById('fullscreenBtn');
+  const widthRange = document.getElementById('widthRange');
+  const textRange = document.getElementById('textRange');
+  const widthVal = document.getElementById('widthVal');
+  const textVal = document.getElementById('textVal');
 
   function msToClock(ms){
     const s = Math.floor(ms/1000);
@@ -139,6 +157,7 @@
       nm.className = 'name';
       nm.textContent = sp.name || '(no name)';
       const tm = document.createElement('div');
+      tm.className = 'time';
       tm.textContent = msToClock(sp.elapsedMillis || 0);
 
       const row = document.createElement('div');
@@ -226,6 +245,48 @@
     } catch(err) { console.warn('Failed to save title', err); }
   });
 
+  // Size controls wiring
+  function applySize(cw, ts){
+    if (typeof cw === 'number' && !Number.isNaN(cw)) {
+      document.documentElement.style.setProperty('--card-width', cw + 'px');
+      if (widthRange) { widthRange.value = String(cw); }
+      if (widthVal) { widthVal.textContent = cw + 'px'; }
+    }
+    if (typeof ts === 'number' && !Number.isNaN(ts)) {
+      const scale = Math.max(50, Math.min(200, ts)) / 100;
+      document.documentElement.style.setProperty('--text-scale', String(scale));
+      if (textRange) { textRange.value = String(ts); }
+      if (textVal) { textVal.textContent = ts + '%'; }
+    }
+  }
+  async function loadSize(){
+    try {
+      const res = await fetch('/api/speakers/size');
+      const data = await res.json();
+      const cw = Number(data.cardWidth) || 360;
+      const ts = Number(data.textScale) || 100;
+      applySize(cw, ts);
+    } catch(err) { console.warn('Failed to load size', err); }
+  }
+  let sizePostTimer = null;
+  function postSize(){
+    const cw = Number(widthRange.value);
+    const ts = Number(textRange.value);
+    fetch('/api/speakers/size', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({cardWidth: cw, textScale: ts}) })
+      .catch(err => console.warn('Failed to update size', err));
+  }
+  if (widthRange && textRange){
+    const schedulePost = () => {
+      if (sizePostTimer) clearTimeout(sizePostTimer);
+      sizePostTimer = setTimeout(postSize, 150);
+    };
+    widthRange.addEventListener('input', () => applySize(Number(widthRange.value), undefined));
+    textRange.addEventListener('input', () => applySize(undefined, Number(textRange.value)));
+    widthRange.addEventListener('change', schedulePost);
+    textRange.addEventListener('change', schedulePost);
+  }
+  loadSize();
+
   // Fullscreen toggle
   function isFull(){ return !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement); }
   function enterFull(){
@@ -262,6 +323,10 @@
           const t = (typeof data.value === 'string') ? data.value : '';
           headerTitle.textContent = t;
           titleInput.value = t;
+        } else if (data && data.type === 'size') {
+          const cw = Number(data.cardWidth);
+          const ts = Number(data.textScale);
+          applySize(Number.isFinite(cw) ? cw : undefined, Number.isFinite(ts) ? ts : undefined);
         }
       } catch(err) {
         // ignore malformed messages

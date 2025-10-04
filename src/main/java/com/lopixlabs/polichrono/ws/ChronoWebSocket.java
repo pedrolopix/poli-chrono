@@ -48,6 +48,16 @@ public class ChronoWebSocket {
             connection.sendTextAndAwait(t);
         } catch (Exception ignored) {
         }
+        // send initial UI size settings
+        try {
+            String sz = mapper.writeValueAsString(Map.of(
+                    "type", "size",
+                    "cardWidth", store.getUiCardWidth(),
+                    "textScale", store.getUiTextScale()
+            ));
+            connection.sendTextAndAwait(sz);
+        } catch (Exception ignored) {
+        }
     }
 
     @OnClose
@@ -89,6 +99,25 @@ public class ChronoWebSocket {
         String msg;
         try {
             msg = mapper.writeValueAsString(Map.of("type", "title", "value", store.getTitle()));
+        } catch (Exception e) {
+            return;
+        }
+        for (WebSocketConnection c : connections) {
+            try {
+                c.sendTextAndAwait(msg);
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+    public void broadcastSize() {
+        String msg;
+        try {
+            msg = mapper.writeValueAsString(Map.of(
+                    "type", "size",
+                    "cardWidth", store.getUiCardWidth(),
+                    "textScale", store.getUiTextScale()
+            ));
         } catch (Exception e) {
             return;
         }

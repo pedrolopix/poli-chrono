@@ -3,21 +3,21 @@
   "name" : "Tomas",
   "faceUrl" : "",
   "imageFilename" : null,
-  "elapsedMillis" : 126091,
+  "elapsedMillis" : 154187,
   "running" : false
 }, {
   "id" : "c2234530-5754-480c-9c24-67285b3f529b",
   "name" : "Verissimo",
   "faceUrl" : "",
   "imageFilename" : null,
-  "elapsedMillis" : 0,
+  "elapsedMillis" : 5070,
   "running" : false
 }, {
   "id" : "5e964832-fc2f-4a5d-b73f-9967fdee8d4b",
   "name" : "Pedro",
   "faceUrl" : "",
   "imageFilename" : "5e964832-fc2f-4a5d-b73f-9967fdee8d4b.jpg",
-  "elapsedMillis" : 219085,
+  "elapsedMillis" : 227539,
   "running" : false
 }, {
   "id" : "4d9cc43b-22ca-4629-be9f-b7730f4445f5",

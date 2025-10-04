@@ -130,6 +130,33 @@ public class SpeakersResource {
         return Response.ok().build();
     }
 
+    @GET
+    @Path("/size")
+    public Map<String, Object> getSize() {
+        return Map.of(
+                "cardWidth", store.getUiCardWidth(),
+                "textScale", store.getUiTextScale()
+        );
+    }
+
+    @POST
+    @Path("/size")
+    public Map<String, Object> setSize(Map<String, Object> payload) {
+        Object cw = payload.get("cardWidth");
+        Object ts = payload.get("textScale");
+        if (cw != null) {
+            try { store.setUiCardWidth(Integer.parseInt(String.valueOf(cw))); } catch (Exception ignored) {}
+        }
+        if (ts != null) {
+            try { store.setUiTextScale(Integer.parseInt(String.valueOf(ts))); } catch (Exception ignored) {}
+        }
+        ws.broadcastSize();
+        return Map.of(
+                "cardWidth", store.getUiCardWidth(),
+                "textScale", store.getUiTextScale()
+        );
+    }
+
     // Upload a speaker image as raw bytes (Content-Type: image/*)
     @POST
     @Path("/{id}/image")

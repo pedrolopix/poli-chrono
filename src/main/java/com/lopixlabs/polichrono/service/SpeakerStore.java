@@ -35,6 +35,9 @@ public class SpeakerStore {
 
     private volatile boolean autoStopOnStart;
     private volatile String title;
+    // UI settings (not persisted to file): card width in px and text scale in %
+    private volatile int uiCardWidth = 360;
+    private volatile int uiTextScale = 100;
 
     private final List<Speaker> speakers = new CopyOnWriteArrayList<>();
 
@@ -165,6 +168,12 @@ public class SpeakerStore {
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title == null ? "" : title; }
+
+    public int getUiCardWidth() { return uiCardWidth; }
+    public void setUiCardWidth(int uiCardWidth) { this.uiCardWidth = Math.max(200, Math.min(1000, uiCardWidth)); }
+
+    public int getUiTextScale() { return uiTextScale; }
+    public void setUiTextScale(int uiTextScale) { this.uiTextScale = Math.max(50, Math.min(200, uiTextScale)); }
 
     @PostConstruct
     void init() {

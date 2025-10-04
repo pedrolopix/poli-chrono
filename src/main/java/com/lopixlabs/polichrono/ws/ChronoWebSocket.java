@@ -42,6 +42,12 @@ public class ChronoWebSocket {
             connection.sendTextAndAwait(cfg);
         } catch (Exception ignored) {
         }
+        // send initial title
+        try {
+            String t = mapper.writeValueAsString(Map.of("type", "title", "value", store.getTitle()));
+            connection.sendTextAndAwait(t);
+        } catch (Exception ignored) {
+        }
     }
 
     @OnClose
@@ -74,6 +80,21 @@ public class ChronoWebSocket {
         for (WebSocketConnection c : connections) {
             try {
                 c.sendTextAndAwait(cfg);
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+    public void broadcastTitle() {
+        String msg;
+        try {
+            msg = mapper.writeValueAsString(Map.of("type", "title", "value", store.getTitle()));
+        } catch (Exception e) {
+            return;
+        }
+        for (WebSocketConnection c : connections) {
+            try {
+                c.sendTextAndAwait(msg);
             } catch (Exception ignored) {
             }
         }

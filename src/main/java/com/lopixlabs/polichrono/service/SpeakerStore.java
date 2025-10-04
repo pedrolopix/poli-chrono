@@ -30,7 +30,11 @@ public class SpeakerStore {
     @ConfigProperty(name = "chrono.autostop", defaultValue = "true")
     boolean defaultAutoStop;
 
+    @ConfigProperty(name = "chrono.title", defaultValue = "")
+    String defaultTitle;
+
     private volatile boolean autoStopOnStart;
+    private volatile String title;
 
     private final List<Speaker> speakers = new CopyOnWriteArrayList<>();
 
@@ -159,9 +163,13 @@ public class SpeakerStore {
         return speakers.stream().anyMatch(Speaker::isRunning);
     }
 
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title == null ? "" : title; }
+
     @PostConstruct
     void init() {
         autoStopOnStart = defaultAutoStop;
+        title = defaultTitle;
         try {
             Path path = Path.of(filePath);
             if (!Files.exists(path)) {

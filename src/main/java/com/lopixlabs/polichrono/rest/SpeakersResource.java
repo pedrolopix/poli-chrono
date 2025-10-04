@@ -106,6 +106,22 @@ public class SpeakersResource {
         return Map.of("enabled", store.isAutoStopOnStart());
     }
 
+    @GET
+    @Path("/title")
+    public Map<String, Object> getTitle() {
+        return Map.of("title", store.getTitle());
+    }
+
+    @POST
+    @Path("/title")
+    public Map<String, Object> setTitle(Map<String, Object> payload) {
+        Object v = payload.get("title");
+        String title = v == null ? "" : String.valueOf(v);
+        store.setTitle(title);
+        ws.broadcastTitle();
+        return Map.of("title", store.getTitle());
+    }
+
     @POST
     @Path("/reorder")
     public Response reorder(List<String> ids) {

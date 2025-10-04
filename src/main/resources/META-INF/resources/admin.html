@@ -6,7 +6,7 @@
   <title>Admin</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <style>
-    :root { --card-width: 360px; --text-scale: 1; }
+    :root { --card-width: 360px; --text-scale: 1; --action-size: 56px; }
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; background:#0b0b0b; color:#eee; }
     header { position:relative; padding: 12px 16px; border-bottom: 1px solid #333; display:flex; align-items:center; justify-content:space-between;}
     .header-title { position:absolute; left:50%; transform: translateX(-50%); font-weight:700; font-size: clamp(1.3rem, 2.5vw, 2rem); }
@@ -19,6 +19,8 @@
     .row { display:flex; gap:8px; align-items:center; flex-wrap: wrap; }
     .icon { width:40px; height:40px; padding:0; display:grid; place-items:center; border-radius:8px; }
     .icon i { pointer-events:none; }
+    /* Per-speaker action buttons (Start/Stop) scalable via preferences */
+    .action-btn { width: var(--action-size, 56px); height: var(--action-size, 56px); }
     button { background:#2d6cdf; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; }
     button.secondary { background:#333; color:#ddd; }
     button.danger { background:#b64a4a; }
@@ -87,6 +89,13 @@
       </div>
       <div class="row" style="margin-bottom:12px; gap:12px; flex-wrap:wrap; align-items:center;">
         <label style="display:flex; align-items:center; gap:8px; margin:0;">
+          Admin button size
+          <input id="actionRange" type="range" min="32" max="96" step="2" style="width:180px;">
+          <span id="actionVal" style="min-width:48px; text-align:right; color:#aaa; font-variant-numeric: tabular-nums;">56px</span>
+        </label>
+      </div>
+      <div class="row" style="margin-bottom:12px; gap:12px; flex-wrap:wrap; align-items:center;">
+        <label style="display:flex; align-items:center; gap:8px; margin:0;">
           Main card width
           <input id="widthRangeMain" type="range" min="280" max="600" step="10" style="width:180px;">
           <span id="widthValMain" style="min-width:48px; text-align:right; color:#aaa; font-variant-numeric: tabular-nums;">360px</span>
@@ -147,6 +156,8 @@
   const textRangeMain = document.getElementById('textRangeMain');
   const widthValMain = document.getElementById('widthValMain');
   const textValMain = document.getElementById('textValMain');
+  const actionRange = document.getElementById('actionRange');
+  const actionVal = document.getElementById('actionVal');
 
   function msToClock(ms){
     const s = Math.floor(ms/1000);
@@ -275,12 +286,12 @@
       const row = document.createElement('div');
       row.className = 'row';
       const startBtn = document.createElement('button');
-      startBtn.className = 'icon';
+      startBtn.className = 'icon action-btn';
       startBtn.title = 'Start';
       startBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
       startBtn.onclick = async () => { await fetch(`/api/speakers/${sp.id}/start`, {method:'POST'}); };
       const stopBtn = document.createElement('button');
-      stopBtn.className = 'icon secondary';
+      stopBtn.className = 'icon secondary action-btn';
       stopBtn.title = 'Stop';
       stopBtn.innerHTML = '<i class="fa-solid fa-stop"></i>';
       stopBtn.onclick = async () => { await fetch(`/api/speakers/${sp.id}/stop`, {method:'POST'}); };
@@ -358,7 +369,7 @@
   });
 
   // Size controls wiring
-  function applySize(cw, ts){
+  function applySize(cw, ts, as){
     if (typeof cw === 'number' && !Number.isNaN(cw)) {
       document.documentElement.style.setProperty('--card-width', cw + 'px');
       if (widthRange) { widthRange.value = String(cw); }
@@ -370,6 +381,11 @@
       if (textRange) { textRange.value = String(ts); }
       if (textVal) { textVal.textContent = ts + '%'; }
     }
+    if (typeof as === 'number' && !Number.isNaN(as)) {
+      document.documentElement.style.setProperty('--action-size', as + 'px');
+      if (actionRange) { actionRange.value = String(as); }
+      if (actionVal) { actionVal.textContent = as + 'px'; }
+    }
   }
   async function loadSize(){
     try {
@@ -377,25 +393,29 @@
       const data = await res.json();
       const cw = Number(data.cardWidth) || 360;
       const ts = Number(data.textScale) || 100;
-      applySize(cw, ts);
+      const as = Number(data.actionSize) || 56;
+      applySize(cw, ts, as);
     } catch(err) { console.warn('Failed to load size', err); }
   }
   let sizePostTimer = null;
   function postSize(){
     const cw = Number(widthRange.value);
     const ts = Number(textRange.value);
-    fetch('/api/speakers/size', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({cardWidth: cw, textScale: ts}) })
+    const as = Number(actionRange.value);
+    fetch('/api/speakers/size', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({cardWidth: cw, textScale: ts, actionSize: as}) })
       .catch(err => console.warn('Failed to update size', err));
   }
-  if (widthRange && textRange){
+  if (widthRange && textRange && actionRange){
     const schedulePost = () => {
       if (sizePostTimer) clearTimeout(sizePostTimer);
       sizePostTimer = setTimeout(postSize, 150);
     };
-    widthRange.addEventListener('input', () => applySize(Number(widthRange.value), undefined));
-    textRange.addEventListener('input', () => applySize(undefined, Number(textRange.value)));
+    widthRange.addEventListener('input', () => applySize(Number(widthRange.value), undefined, undefined));
+    textRange.addEventListener('input', () => applySize(undefined, Number(textRange.value), undefined));
+    actionRange.addEventListener('input', () => applySize(undefined, undefined, Number(actionRange.value)));
     widthRange.addEventListener('change', schedulePost);
     textRange.addEventListener('change', schedulePost);
+    actionRange.addEventListener('change', schedulePost);
   }
   loadSize();
 
@@ -489,7 +509,8 @@
         } else if (data && data.type === 'size') {
           const cw = Number(data.cardWidth);
           const ts = Number(data.textScale);
-          applySize(Number.isFinite(cw) ? cw : undefined, Number.isFinite(ts) ? ts : undefined);
+          const as = Number(data.actionSize);
+          applySize(Number.isFinite(cw) ? cw : undefined, Number.isFinite(ts) ? ts : undefined, Number.isFinite(as) ? as : undefined);
         } else if (data && data.type === 'sizeMain') {
           const cw = Number(data.cardWidth);
           const ts = Number(data.textScale);

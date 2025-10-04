@@ -53,7 +53,8 @@ public class ChronoWebSocket {
             String sz = mapper.writeValueAsString(Map.of(
                     "type", "size",
                     "cardWidth", store.getUiCardWidth(),
-                    "textScale", store.getUiTextScale()
+                    "textScale", store.getUiTextScale(),
+                    "actionSize", store.getUiActionSize()
             ));
             connection.sendTextAndAwait(sz);
         } catch (Exception ignored) {
@@ -126,7 +127,8 @@ public class ChronoWebSocket {
             msg = mapper.writeValueAsString(Map.of(
                     "type", "size",
                     "cardWidth", store.getUiCardWidth(),
-                    "textScale", store.getUiTextScale()
+                    "textScale", store.getUiTextScale(),
+                    "actionSize", store.getUiActionSize()
             ));
         } catch (Exception e) {
             return;

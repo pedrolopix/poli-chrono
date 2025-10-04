@@ -135,7 +135,8 @@ public class SpeakersResource {
     public Map<String, Object> getSize() {
         return Map.of(
                 "cardWidth", store.getUiCardWidth(),
-                "textScale", store.getUiTextScale()
+                "textScale", store.getUiTextScale(),
+                "actionSize", store.getUiActionSize()
         );
     }
 
@@ -144,16 +145,21 @@ public class SpeakersResource {
     public Map<String, Object> setSize(Map<String, Object> payload) {
         Object cw = payload.get("cardWidth");
         Object ts = payload.get("textScale");
+        Object as = payload.get("actionSize");
         if (cw != null) {
             try { store.setUiCardWidth(Integer.parseInt(String.valueOf(cw))); } catch (Exception ignored) {}
         }
         if (ts != null) {
             try { store.setUiTextScale(Integer.parseInt(String.valueOf(ts))); } catch (Exception ignored) {}
         }
+        if (as != null) {
+            try { store.setUiActionSize(Integer.parseInt(String.valueOf(as))); } catch (Exception ignored) {}
+        }
         ws.broadcastSize();
         return Map.of(
                 "cardWidth", store.getUiCardWidth(),
-                "textScale", store.getUiTextScale()
+                "textScale", store.getUiTextScale(),
+                "actionSize", store.getUiActionSize()
         );
     }
 

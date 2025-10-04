@@ -38,6 +38,8 @@ public class SpeakerStore {
     // UI settings (not persisted to file): card width in px and text scale in %
     private volatile int uiCardWidth = 360;
     private volatile int uiTextScale = 100;
+    // Admin action button size in px (Start/Stop); configurable via UI
+    private volatile int uiActionSize = 56;
     // Audience (main page) UI settings: separate controls from admin
     private volatile int uiCardWidthMain = 360;
     private volatile int uiTextScaleMain = 100;
@@ -177,6 +179,9 @@ public class SpeakerStore {
 
     public int getUiTextScale() { return uiTextScale; }
     public void setUiTextScale(int uiTextScale) { this.uiTextScale = Math.max(50, Math.min(200, uiTextScale)); }
+
+    public int getUiActionSize() { return uiActionSize; }
+    public void setUiActionSize(int uiActionSize) { this.uiActionSize = Math.max(32, Math.min(96, uiActionSize)); }
 
     public int getUiCardWidthMain() { return uiCardWidthMain; }
     public void setUiCardWidthMain(int uiCardWidthMain) { this.uiCardWidthMain = Math.max(200, Math.min(1000, uiCardWidthMain)); }

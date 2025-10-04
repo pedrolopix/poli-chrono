@@ -1,0 +1,42 @@
+name: Build Windows Installer
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["**"]
+    paths:
+      - "**/*.java"
+      - "pom.xml"
+      - ".github/workflows/windows-installer.yml"
+      - "scripts/windows/**"
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'maven'
+
+      - name: Make Maven Wrapper executable (Git Bash compatibility)
+        run: git update-index --chmod=+x mvnw
+
+      - name: Build Windows installer (.exe) with bundled JRE
+        shell: pwsh
+        run: |
+          ./scripts/windows/build-windows-installer.ps1 -VerboseLogging
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: |
+            target/*.exe
+            target/runtime-*/**
+          if-no-files-found: error

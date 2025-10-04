@@ -53,6 +53,29 @@ You can then execute your native executable with: `./target/poli-chrono-1.0-SNAP
 
 If you want to learn more about building native executables, please consult <https://quarkus.io/guides/maven-tooling>.
 
+## Windows installer (bundled Java runtime)
+
+This project includes a Windows installer builder that packages the application together with a private Java runtime (no system Java required to run the app).
+
+Build the installer on Windows 10/11 with JDK 21 (Temurin recommended):
+
+```powershell
+# From the repository root
+scripts/windows/build-windows-installer.ps1
+```
+
+What it does:
+- Builds an uber-jar (Quarkus runner jar).
+- Uses jdeps to detect required Java modules, then jlink to create a minimal runtime.
+- Uses jpackage to produce a self-contained .exe installer.
+
+Output:
+- Installer EXE available under target/ (example: PoliChrono-1.0.0.exe).
+- The installed application includes its own Java and does not depend on system Java.
+
+CI builds:
+- A GitHub Actions workflow .github/workflows/windows-installer.yml is provided to produce the installer on windows-latest and upload it as a build artifact.
+
 ## Provided Code
 
 ### REST

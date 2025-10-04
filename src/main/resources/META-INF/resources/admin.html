@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>poli-chrono admin</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; background:#0b0b0b; color:#eee; }
+    header { padding: 12px 16px; border-bottom: 1px solid #333; display:flex; align-items:center; justify-content:space-between;}
+    main { padding: 16px; display:grid; grid-template-columns: 1fr 320px; gap: 16px; }
+    .list { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 16px; }
+    .card { position:relative; background:#161616; border:1px solid #333; border-radius:12px; padding:16px; display:flex; gap:16px; align-items:center; }
+    img { width: 96px; height:96px; object-fit: cover; border-radius: 8px; background:#222; }
+    .name { font-weight:700; }
+    .row { display:flex; gap:8px; align-items:center; flex-wrap: wrap; }
+    .icon { width:40px; height:40px; padding:0; display:grid; place-items:center; border-radius:8px; }
+    .icon i { pointer-events:none; }
+    button { background:#2d6cdf; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; }
+    button.secondary { background:#333; color:#ddd; }
+    button.danger { background:#b64a4a; }
+    .top-actions { position:absolute; top:8px; right:8px; display:flex; gap:8px; }
+    label { display:block; font-size:12px; color:#aaa; margin-top:8px; }
+    input { width:100%; padding:8px; border-radius:8px; background:#111; color:#eee; border:1px solid #333; }
+    form { background:#161616; padding:12px; border:1px solid #333; border-radius:12px; }
+    .running { outline: 2px solid #26a269; }
+    a { color:#7aa2ff; text-decoration:none; }
+    .card.dragging { opacity: 0.5; }
+  </style>
+</head>
+<body>
+<header>
+  <div>poli-chrono admin</div>
+  <nav><a href="/">audience view</a></nav>
+</header>
+<main>
+  <section>
+    <div class="row" style="margin-bottom:8px; gap:12px;">
+      <button id="stopAll">Stop all</button>
+      <label style="display:flex; align-items:center; gap:6px; margin:0;">
+        <input type="checkbox" id="autoStopToggle"/>
+        Auto stop others on start
+      </label>
+    </div>
+    <div id="list" class="list"></div>
+  </section>
+  <aside>
+    <form id="form">
+      <h3 style="margin:0 0 8px 0;">Add / Edit Speaker</h3>
+      <input type="hidden" id="id" />
+      <label>Name</label>
+      <input id="name" placeholder="Speaker name"/>
+      <label>Face Image</label>
+      <input id="imageFile" type="file" accept="image/*"/>
+      <div class="row" style="margin-top:12px;">
+        <button type="submit">Save</button>
+        <button type="button" id="clear" class="secondary">Clear</button>
+      </div>
+    </form>
+  </aside>
+</main>
+<script>
+  const listEl = document.getElementById('list');
+  const form = document.getElementById('form');
+  const idEl = document.getElementById('id');
+  const nameEl = document.getElementById('name');
+  const imageInput = document.getElementById('imageFile');
+  const stopAllBtn = document.getElementById('stopAll');
+  const autoStopToggle = document.getElementById('autoStopToggle');
+
+  function msToClock(ms){
+    const s = Math.floor(ms/1000);
+    const hh = Math.floor(s/3600).toString().padStart(2,'0');
+    const mm = Math.floor((s%3600)/60).toString().padStart(2,'0');
+    const ss = Math.floor(s%60).toString().padStart(2,'0');
+    return `${hh}:${mm}:${ss}`;
+  }
+
+  let dragSrcId = null;
+  let currentSpeakers = [];
+  function render(list){
+    currentSpeakers = Array.isArray(list) ? list.slice() : [];
+    listEl.innerHTML = '';
+    list.forEach(sp => {
+      const card = document.createElement('div');
+      card.className = 'card' + (sp.running ? ' running' : '');
+      card.dataset.id = sp.id;
+      card.draggable = true;
+      // drag events
+      card.addEventListener('dragstart', (e) => { dragSrcId = sp.id; card.classList.add('dragging'); });
+      card.addEventListener('dragend', () => { dragSrcId = null; card.classList.remove('dragging'); });
+      card.addEventListener('dragover', (e) => { e.preventDefault(); });
+      card.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        const targetId = sp.id;
+        if (!dragSrcId || dragSrcId === targetId) return;
+        const ids = currentSpeakers.map(s => s.id);
+        const from = ids.indexOf(dragSrcId);
+        const to = ids.indexOf(targetId);
+        if (from === -1 || to === -1) return;
+        ids.splice(to, 0, ids.splice(from, 1)[0]);
+        try { await fetch('/api/speakers/reorder', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(ids) }); } catch(err) { console.warn('reorder failed', err); }
+      });
+
+      // image
+      const img = document.createElement('img');
+      img.src = `/api/speakers/${sp.id}/image`;
+      img.onerror = () => { img.onerror = null; img.src = 'https://dummyimage.com/256x256/222/999&text=+'; };
+
+      // top-right action: delete (x)
+      const top = document.createElement('div');
+      top.className = 'top-actions';
+      const delIcon = document.createElement('button');
+      delIcon.className = 'icon danger';
+      delIcon.title = 'Delete';
+      delIcon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+      delIcon.onclick = async (ev) => {
+        ev.stopPropagation();
+        if (confirm('Delete speaker?')) { await fetch(`/api/speakers/${sp.id}`, {method:'DELETE'}); }
+      };
+      top.appendChild(delIcon);
+
+      const meta = document.createElement('div');
+      meta.style.flex = '1';
+      const nm = document.createElement('div');
+      nm.className = 'name';
+      nm.textContent = sp.name || '(no name)';
+      const tm = document.createElement('div');
+      tm.textContent = msToClock(sp.elapsedMillis || 0);
+
+      const row = document.createElement('div');
+      row.className = 'row';
+      const startBtn = document.createElement('button');
+      startBtn.className = 'icon';
+      startBtn.title = 'Start';
+      startBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+      startBtn.onclick = async () => { await fetch(`/api/speakers/${sp.id}/start`, {method:'POST'}); };
+      const stopBtn = document.createElement('button');
+      stopBtn.className = 'icon secondary';
+      stopBtn.title = 'Stop';
+      stopBtn.innerHTML = '<i class="fa-solid fa-stop"></i>';
+      stopBtn.onclick = async () => { await fetch(`/api/speakers/${sp.id}/stop`, {method:'POST'}); };
+
+      row.appendChild(startBtn);
+      row.appendChild(stopBtn);
+      meta.appendChild(nm);
+      meta.appendChild(tm);
+      meta.appendChild(row);
+      card.appendChild(img);
+      card.appendChild(top);
+      card.appendChild(meta);
+      listEl.appendChild(card);
+    });
+  }
+
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const id = idEl.value.trim();
+    const name = nameEl.value.trim();
+    if (!name) { alert('Name is required'); return; }
+    let speakerId = id;
+    if (id) {
+      await fetch(`/api/speakers/${id}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name})});
+    } else {
+      const res = await fetch(`/api/speakers`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name})});
+      const sp = await res.json();
+      speakerId = sp.id;
+    }
+    // Upload image if selected
+    const file = imageInput.files && imageInput.files[0];
+    if (file && speakerId) {
+      try {
+        await fetch(`/api/speakers/${speakerId}/image`, { method:'POST', headers: {'Content-Type': file.type || 'application/octet-stream'}, body: file });
+      } catch(err) { console.error(err); }
+    }
+    idEl.value = '';
+    nameEl.value = '';
+    try { imageInput.value = ''; } catch(err) {}
+  };
+  document.getElementById('clear').onclick = () => { idEl.value = ''; nameEl.value = ''; try { imageInput.value = ''; } catch(e) {} };
+  stopAllBtn.onclick = async () => { await fetch('/api/speakers/stopAll', {method:'POST'}); };
+
+  // Auto-stop toggle wiring
+  async function loadAutoStop(){
+    try {
+      const res = await fetch('/api/speakers/autoStop');
+      const data = await res.json();
+      autoStopToggle.checked = !!data.enabled;
+    } catch(err) { console.warn('Failed to load autoStop setting', err); }
+  }
+  autoStopToggle.addEventListener('change', async () => {
+    try {
+      await fetch('/api/speakers/autoStop', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({enabled: autoStopToggle.checked}) });
+    } catch(err) { console.warn('Failed to update autoStop setting', err); }
+  });
+  loadAutoStop();
+
+  let ws;
+  function connect(){
+    ws = new WebSocket((location.protocol === 'https:'?'wss':'ws') + '://' + location.host + '/ws');
+    ws.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (Array.isArray(data)) {
+          render(data);
+        } else if (data && data.type === 'autoStop') {
+          autoStopToggle.checked = !!data.enabled;
+        }
+      } catch(err) {
+        // ignore malformed messages
+      }
+    };
+    ws.onclose = () => setTimeout(connect, 1000);
+  }
+  connect();
+</script>
+</body>
+</html>

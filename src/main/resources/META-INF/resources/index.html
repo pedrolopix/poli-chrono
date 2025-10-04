@@ -20,6 +20,7 @@
     .name { font-size: calc(1.2rem * var(--text-scale, 1)); font-weight: 700; }
     .time { font-size: calc(2.2rem * var(--text-scale, 1)); font-weight: 800; letter-spacing: 1px; }
     .running { outline: 2px solid #26a269; box-shadow: 0 0 0 4px rgba(38,162,105,0.2) inset; }
+    .card.running .name, .card.running .time { color: #26a269; }
     .badge { font-size: 0.75rem; color:#aaa; }
     a { color: #7aa2ff; text-decoration: none; }
   </style>
@@ -72,7 +73,7 @@
       time.textContent = msToClock(sp.elapsedMillis || 0);
       const badge = document.createElement('div');
       badge.className = 'badge';
-      badge.textContent = sp.running ? 'A falar' : '';
+      badge.textContent = sp.running ? '' : '';
       content.appendChild(name);
       content.appendChild(time);
       content.appendChild(badge);

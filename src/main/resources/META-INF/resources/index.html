@@ -135,6 +135,9 @@
           const cw = Number(data.cardWidth);
           const ts = Number(data.textScale);
           applySize(Number.isFinite(cw) ? cw : undefined, Number.isFinite(ts) ? ts : undefined);
+        } else if (data && data.type === 'reload') {
+          // force full reload on admin request
+          location.reload();
         } // ignore other config messages
       } catch(err) {
         // ignore malformed messages

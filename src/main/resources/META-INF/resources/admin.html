@@ -10,7 +10,7 @@
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; background:#0b0b0b; color:#eee; }
     header { position:relative; padding: 12px 16px; border-bottom: 1px solid #333; display:flex; align-items:center; justify-content:space-between;}
     .header-title { position:absolute; left:50%; transform: translateX(-50%); font-weight:700; font-size: clamp(1.3rem, 2.5vw, 2rem); }
-    main { padding: 16px; display:grid; grid-template-columns: 1fr 320px; gap: 16px; }
+    main { padding: 16px; display:grid; grid-template-columns: 1fr 340px; gap: 16px; }
     .list { display: grid; grid-template-columns: repeat(auto-fit, minmax(var(--card-width, 360px), 1fr)); gap: 16px; }
     .card { position:relative; background:#161616; border:1px solid #333; border-radius:12px; padding:16px; display:flex; gap:16px; align-items:center; }
     img { width: 96px; height:96px; object-fit: cover; border-radius: 8px; background:#222; }
@@ -22,15 +22,21 @@
     button { background:#2d6cdf; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; }
     button.secondary { background:#333; color:#ddd; }
     button.danger { background:#b64a4a; }
-    .top-actions { position:absolute; top:8px; right:8px; display:flex; gap:8px; }
+    .top-actions { position:absolute; top:8px; right:8px; display:none; gap:8px; }
+    body.edit-mode .top-actions { display:flex; }
     label { display:block; font-size:12px; color:#aaa; margin-top:8px; }
     input { width:100%; padding:8px; border-radius:8px; background:#111; color:#eee; border:1px solid #333; }
-    form { background:#161616; padding:12px; border:1px solid #333; border-radius:12px; }
+    form, .panel { background:#161616; padding:12px; border:1px solid #333; border-radius:12px; }
     .running { outline: 2px solid #26a269; }
     .card.running .name, .card.running .time { color: #26a269; }
     a { color:#7aa2ff; text-decoration:none; }
     .card.dragging { opacity: 0.5; }
     .header-actions { margin-left:auto; display:flex; align-items:center; gap:8px; }
+    /* tabs */
+    .tabs { display:flex; gap:8px; margin-bottom:8px; }
+    .tab-btn { background:#333; color:#ddd; border:1px solid #444; }
+    .tab-btn.active { background:#2d6cdf; color:#fff; border-color:#2d6cdf; }
+    .hidden { display:none !important; }
   </style>
 </head>
 <body>
@@ -38,6 +44,7 @@
   <div class="header-title" id="headerTitle"></div>
   <div class="header-actions">
     <nav><a href="/">audience view</a></nav>
+    <button id="editModeBtn" class="icon secondary" title="Toggle edit mode"><i class="fa-solid fa-pen-to-square"></i></button>
     <button id="fullscreenBtn" class="icon" title="Toggle fullscreen"><i class="fa-solid fa-expand"></i></button>
   </div>
 </header>
@@ -45,54 +52,72 @@
   <section>
     <div class="row" style="margin-bottom:8px; gap:12px;">
       <button id="stopAll">Stop all</button>
-      <label style="display:flex; align-items:center; gap:6px; margin:0;">
-        <input type="checkbox" id="autoStopToggle"/>
-        Auto stop others on start
-      </label>
-    </div>
-    <div class="row" style="margin-bottom:16px; gap:8px; align-items: center;">
-      <input id="titleInput" placeholder="Title (optional)" style="max-width:420px;flex:1;"/>
-      <button id="saveTitle" class="secondary" title="Save title"><i class="fa-solid fa-floppy-disk"></i></button>
-    </div>
-    <div class="row" style="margin-bottom:16px; gap:16px; flex-wrap:wrap; align-items:center;">
-      <label style="display:flex; align-items:center; gap:8px; margin:0;">
-        Admin card width
-        <input id="widthRange" type="range" min="280" max="600" step="10" style="width:220px;">
-        <span id="widthVal" style="min-width:48px; text-align:right; color:#aaa; font-variant-numeric: tabular-nums;">360px</span>
-      </label>
-      <label style="display:flex; align-items:center; gap:8px; margin:0;">
-        Admin text size
-        <input id="textRange" type="range" min="80" max="160" step="5" style="width:220px;">
-        <span id="textVal" style="min-width:48px; text-align:right; color:#aaa; font-variant-numeric: tabular-nums;">100%</span>
-      </label>
-    </div>
-    <div class="row" style="margin-bottom:16px; gap:16px; flex-wrap:wrap; align-items:center;">
-      <label style="display:flex; align-items:center; gap:8px; margin:0;">
-        Main card width
-        <input id="widthRangeMain" type="range" min="280" max="600" step="10" style="width:220px;">
-        <span id="widthValMain" style="min-width:48px; text-align:right; color:#aaa; font-variant-numeric: tabular-nums;">360px</span>
-      </label>
-      <label style="display:flex; align-items:center; gap:8px; margin:0;">
-        Main text size
-        <input id="textRangeMain" type="range" min="80" max="160" step="5" style="width:220px;">
-        <span id="textValMain" style="min-width:48px; text-align:right; color:#aaa; font-variant-numeric: tabular-nums;">100%</span>
-      </label>
     </div>
     <div id="list" class="list"></div>
   </section>
   <aside>
-    <form id="form">
-      <h3 style="margin:0 0 8px 0;">Add / Edit Speaker</h3>
-      <input type="hidden" id="id" />
-      <label>Name</label>
-      <input id="name" placeholder="Speaker name"/>
-      <label>Face Image</label>
-      <input id="imageFile" type="file" accept="image/*"/>
-      <div class="row" style="margin-top:12px;">
-        <button type="submit">Save</button>
-        <button type="button" id="clear" class="secondary">Clear</button>
+    <div class="tabs">
+      <button class="tab-btn active" id="tabPrefsBtn">Preferences</button>
+      <button class="tab-btn" id="tabManageBtn">Manage Speakers</button>
+    </div>
+    <div id="prefsPanel" class="panel">
+      <div class="row" style="margin-bottom:12px; gap:6px; align-items:center;">
+        <label style="display:flex; align-items:center; gap:6px; margin:0;">
+          <input type="checkbox" id="autoStopToggle"/>
+          Auto stop others on start
+        </label>
       </div>
-    </form>
+      <div class="row" style="margin-bottom:12px; gap:8px; align-items: center;">
+        <input id="titleInput" placeholder="Title (optional)" style="flex:1;"/>
+        <button id="saveTitle" class="secondary" title="Save title"><i class="fa-solid fa-floppy-disk"></i></button>
+      </div>
+      <div class="row" style="margin-bottom:12px; gap:12px; flex-wrap:wrap; align-items:center;">
+        <label style="display:flex; align-items:center; gap:8px; margin:0;">
+          Admin card width
+          <input id="widthRange" type="range" min="280" max="600" step="10" style="width:180px;">
+          <span id="widthVal" style="min-width:48px; text-align:right; color:#aaa; font-variant-numeric: tabular-nums;">360px</span>
+        </label>
+      </div>
+      <div class="row" style="margin-bottom:12px; gap:12px; flex-wrap:wrap; align-items:center;">
+        <label style="display:flex; align-items:center; gap:8px; margin:0;">
+          Admin text size
+          <input id="textRange" type="range" min="80" max="160" step="5" style="width:180px;">
+          <span id="textVal" style="min-width:48px; text-align:right; color:#aaa; font-variant-numeric: tabular-nums;">100%</span>
+        </label>
+      </div>
+      <div class="row" style="margin-bottom:12px; gap:12px; flex-wrap:wrap; align-items:center;">
+        <label style="display:flex; align-items:center; gap:8px; margin:0;">
+          Main card width
+          <input id="widthRangeMain" type="range" min="280" max="600" step="10" style="width:180px;">
+          <span id="widthValMain" style="min-width:48px; text-align:right; color:#aaa; font-variant-numeric: tabular-nums;">360px</span>
+        </label>
+      </div>
+      <div class="row" style="margin-bottom:12px; gap:12px; flex-wrap:wrap; align-items:center;">
+        <label style="display:flex; align-items:center; gap:8px; margin:0;">
+          Main text size
+          <input id="textRangeMain" type="range" min="80" max="160" step="5" style="width:180px;">
+          <span id="textValMain" style="min-width:48px; text-align:right; color:#aaa; font-variant-numeric: tabular-nums;">100%</span>
+        </label>
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <button id="forceReload" class="secondary" title="Force audience full reload"><i class="fa-solid fa-rotate-right"></i> Reload audience</button>
+      </div>
+    </div>
+
+    <div id="managePanel" class="panel hidden">
+      <form id="form" style="margin:0;">
+        <h3 style="margin:0 0 8px 0;">Add / Edit Speaker</h3>
+        <input type="hidden" id="id" />
+        <label>Name</label>
+        <input id="name" placeholder="Speaker name"/>
+        <label>Face Image</label>
+        <input id="imageFile" type="file" accept="image/*"/>
+        <div class="row" style="margin-top:12px;">
+          <button type="submit">Save</button>
+          <button type="button" id="clear" class="secondary">Clear</button>
+        </div>
+      </form>
+    </div>
   </aside>
 </main>
 <script>
@@ -107,6 +132,12 @@
   const titleInput = document.getElementById('titleInput');
   const saveTitleBtn = document.getElementById('saveTitle');
   const fullscreenBtn = document.getElementById('fullscreenBtn');
+  const editModeBtn = document.getElementById('editModeBtn');
+  const tabPrefsBtn = document.getElementById('tabPrefsBtn');
+  const tabManageBtn = document.getElementById('tabManageBtn');
+  const prefsPanel = document.getElementById('prefsPanel');
+  const managePanel = document.getElementById('managePanel');
+  const forceReloadBtn = document.getElementById('forceReload');
   const widthRange = document.getElementById('widthRange');
   const textRange = document.getElementById('textRange');
   const widthVal = document.getElementById('widthVal');
@@ -126,6 +157,46 @@
 
   let dragSrcId = null;
   let currentSpeakers = [];
+  let editMode = false;
+
+  function applyEditMode(){
+    document.body.classList.toggle('edit-mode', editMode);
+    // Manage tab/button visibility
+    if (tabManageBtn) tabManageBtn.classList.toggle('hidden', !editMode);
+    if (managePanel) managePanel.classList.toggle('hidden', !editMode || !tabManageBtn.classList.contains('active'));
+    // If leaving edit mode while Manage tab active, switch to Preferences
+    if (!editMode && tabManageBtn && tabManageBtn.classList.contains('active')) {
+      showTab('prefs');
+    }
+    // Button style
+    if (editModeBtn) {
+      editModeBtn.classList.toggle('secondary', !editMode);
+      editModeBtn.classList.toggle('danger', editMode);
+      editModeBtn.title = editMode ? 'Exit edit mode' : 'Enter edit mode';
+    }
+  }
+
+  function showTab(which){
+    if (which === 'manage' && !editMode) return;
+    if (which === 'prefs') {
+      tabPrefsBtn && tabPrefsBtn.classList.add('active');
+      tabManageBtn && tabManageBtn.classList.remove('active');
+      prefsPanel && prefsPanel.classList.remove('hidden');
+      managePanel && managePanel.classList.add('hidden');
+    } else {
+      tabPrefsBtn && tabPrefsBtn.classList.remove('active');
+      tabManageBtn && tabManageBtn.classList.add('active');
+      prefsPanel && prefsPanel.classList.add('hidden');
+      managePanel && managePanel.classList.remove('hidden');
+    }
+  }
+
+  if (editModeBtn) {
+    editModeBtn.addEventListener('click', () => { editMode = !editMode; applyEditMode(); });
+  }
+  if (tabPrefsBtn) tabPrefsBtn.addEventListener('click', () => showTab('prefs'));
+  if (tabManageBtn) tabManageBtn.addEventListener('click', () => showTab('manage'));
+
   function render(list){
     currentSpeakers = Array.isArray(list) ? list.slice() : [];
     listEl.innerHTML = '';
@@ -133,12 +204,13 @@
       const card = document.createElement('div');
       card.className = 'card' + (sp.running ? ' running' : '');
       card.dataset.id = sp.id;
-      card.draggable = true;
+      card.draggable = !!editMode;
       // drag events
-      card.addEventListener('dragstart', (e) => { dragSrcId = sp.id; card.classList.add('dragging'); });
+      card.addEventListener('dragstart', (e) => { if (!editMode) return; dragSrcId = sp.id; card.classList.add('dragging'); });
       card.addEventListener('dragend', () => { dragSrcId = null; card.classList.remove('dragging'); });
-      card.addEventListener('dragover', (e) => { e.preventDefault(); });
+      card.addEventListener('dragover', (e) => { if (!editMode) return; e.preventDefault(); });
       card.addEventListener('drop', async (e) => {
+        if (!editMode) return;
         e.preventDefault();
         const targetId = sp.id;
         if (!dragSrcId || dragSrcId === targetId) return;
@@ -155,17 +227,31 @@
       img.src = `/api/speakers/${sp.id}/image`;
       img.onerror = () => { img.onerror = null; img.src = 'https://dummyimage.com/256x256/222/999&text=+'; };
 
-      // top-right action: delete (x)
+      // top-right actions: edit + delete (visible in CSS only during edit mode)
       const top = document.createElement('div');
       top.className = 'top-actions';
+      const editIcon = document.createElement('button');
+      editIcon.className = 'icon secondary';
+      editIcon.title = 'Edit';
+      editIcon.innerHTML = '<i class="fa-solid fa-pen"></i>';
+      editIcon.onclick = (ev) => {
+        ev.stopPropagation();
+        if (!editMode) return;
+        if (tabManageBtn) tabManageBtn.classList.remove('hidden');
+        showTab('manage');
+        if (idEl) idEl.value = sp.id;
+        if (nameEl) nameEl.value = sp.name || '';
+      };
       const delIcon = document.createElement('button');
       delIcon.className = 'icon danger';
       delIcon.title = 'Delete';
       delIcon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
       delIcon.onclick = async (ev) => {
         ev.stopPropagation();
+        if (!editMode) return;
         if (confirm('Delete speaker?')) { await fetch(`/api/speakers/${sp.id}`, {method:'DELETE'}); }
       };
+      top.appendChild(editIcon);
       top.appendChild(delIcon);
 
       const meta = document.createElement('div');
@@ -364,6 +450,18 @@
   document.addEventListener('webkitfullscreenchange', updateFsIcon);
   document.addEventListener('msfullscreenchange', updateFsIcon);
   updateFsIcon();
+
+  // Force audience reload button
+  if (forceReloadBtn) {
+    forceReloadBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      try { await fetch('/api/speakers/reloadMain', { method:'POST' }); } catch(err) { console.warn('Failed to reload audience', err); }
+    });
+  }
+
+  // Initialize tabs/edit mode state
+  showTab('prefs');
+  applyEditMode();
 
   let ws;
   function connect(){

@@ -184,6 +184,13 @@ public class SpeakersResource {
         );
     }
 
+    @POST
+    @Path("/reloadMain")
+    public Response reloadMain() {
+        ws.broadcastReloadMain();
+        return Response.ok().build();
+    }
+
     // Upload a speaker image as raw bytes (Content-Type: image/*)
     @POST
     @Path("/{id}/image")

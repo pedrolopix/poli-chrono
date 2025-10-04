@@ -157,4 +157,19 @@ public class ChronoWebSocket {
             }
         }
     }
+
+    public void broadcastReloadMain() {
+        String msg;
+        try {
+            msg = mapper.writeValueAsString(Map.of("type", "reload"));
+        } catch (Exception e) {
+            return;
+        }
+        for (WebSocketConnection c : connections) {
+            try {
+                c.sendTextAndAwait(msg);
+            } catch (Exception ignored) {
+            }
+        }
+    }
 }

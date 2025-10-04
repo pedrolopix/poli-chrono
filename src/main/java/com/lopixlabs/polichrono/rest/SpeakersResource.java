@@ -157,6 +157,33 @@ public class SpeakersResource {
         );
     }
 
+    @GET
+    @Path("/sizeMain")
+    public Map<String, Object> getSizeMain() {
+        return Map.of(
+                "cardWidth", store.getUiCardWidthMain(),
+                "textScale", store.getUiTextScaleMain()
+        );
+    }
+
+    @POST
+    @Path("/sizeMain")
+    public Map<String, Object> setSizeMain(Map<String, Object> payload) {
+        Object cw = payload.get("cardWidth");
+        Object ts = payload.get("textScale");
+        if (cw != null) {
+            try { store.setUiCardWidthMain(Integer.parseInt(String.valueOf(cw))); } catch (Exception ignored) {}
+        }
+        if (ts != null) {
+            try { store.setUiTextScaleMain(Integer.parseInt(String.valueOf(ts))); } catch (Exception ignored) {}
+        }
+        ws.broadcastSizeMain();
+        return Map.of(
+                "cardWidth", store.getUiCardWidthMain(),
+                "textScale", store.getUiTextScaleMain()
+        );
+    }
+
     // Upload a speaker image as raw bytes (Content-Type: image/*)
     @POST
     @Path("/{id}/image")

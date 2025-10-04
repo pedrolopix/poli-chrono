@@ -1,4 +1,11 @@
 [ {
+  "id" : "5e964832-fc2f-4a5d-b73f-9967fdee8d4b",
+  "name" : "Pedro",
+  "faceUrl" : "",
+  "imageFilename" : "5e964832-fc2f-4a5d-b73f-9967fdee8d4b.jpg",
+  "elapsedMillis" : 227540,
+  "running" : false
+}, {
   "id" : "70c3107d-6c45-41d1-bd80-446e7dfe5a42",
   "name" : "Tomas",
   "faceUrl" : "",
@@ -11,13 +18,6 @@
   "faceUrl" : "",
   "imageFilename" : null,
   "elapsedMillis" : 5070,
-  "running" : false
-}, {
-  "id" : "5e964832-fc2f-4a5d-b73f-9967fdee8d4b",
-  "name" : "Pedro",
-  "faceUrl" : "",
-  "imageFilename" : "5e964832-fc2f-4a5d-b73f-9967fdee8d4b.jpg",
-  "elapsedMillis" : 227539,
   "running" : false
 }, {
   "id" : "4d9cc43b-22ca-4629-be9f-b7730f4445f5",

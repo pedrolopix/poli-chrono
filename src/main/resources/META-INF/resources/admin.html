@@ -55,14 +55,26 @@
     </div>
     <div class="row" style="margin-bottom:16px; gap:16px; flex-wrap:wrap; align-items:center;">
       <label style="display:flex; align-items:center; gap:8px; margin:0;">
-        Card width
+        Admin card width
         <input id="widthRange" type="range" min="280" max="600" step="10" style="width:220px;">
         <span id="widthVal" style="min-width:48px; text-align:right; color:#aaa; font-variant-numeric: tabular-nums;">360px</span>
       </label>
       <label style="display:flex; align-items:center; gap:8px; margin:0;">
-        Text size
+        Admin text size
         <input id="textRange" type="range" min="80" max="160" step="5" style="width:220px;">
         <span id="textVal" style="min-width:48px; text-align:right; color:#aaa; font-variant-numeric: tabular-nums;">100%</span>
+      </label>
+    </div>
+    <div class="row" style="margin-bottom:16px; gap:16px; flex-wrap:wrap; align-items:center;">
+      <label style="display:flex; align-items:center; gap:8px; margin:0;">
+        Main card width
+        <input id="widthRangeMain" type="range" min="280" max="600" step="10" style="width:220px;">
+        <span id="widthValMain" style="min-width:48px; text-align:right; color:#aaa; font-variant-numeric: tabular-nums;">360px</span>
+      </label>
+      <label style="display:flex; align-items:center; gap:8px; margin:0;">
+        Main text size
+        <input id="textRangeMain" type="range" min="80" max="160" step="5" style="width:220px;">
+        <span id="textValMain" style="min-width:48px; text-align:right; color:#aaa; font-variant-numeric: tabular-nums;">100%</span>
       </label>
     </div>
     <div id="list" class="list"></div>
@@ -98,6 +110,10 @@
   const textRange = document.getElementById('textRange');
   const widthVal = document.getElementById('widthVal');
   const textVal = document.getElementById('textVal');
+  const widthRangeMain = document.getElementById('widthRangeMain');
+  const textRangeMain = document.getElementById('textRangeMain');
+  const widthValMain = document.getElementById('widthValMain');
+  const textValMain = document.getElementById('textValMain');
 
   function msToClock(ms){
     const s = Math.floor(ms/1000);
@@ -287,6 +303,45 @@
   }
   loadSize();
 
+  // Main page size controls wiring
+  function applySizeMain(cw, ts){
+    if (typeof cw === 'number' && !Number.isNaN(cw)) {
+      if (widthRangeMain) { widthRangeMain.value = String(cw); }
+      if (widthValMain) { widthValMain.textContent = cw + 'px'; }
+    }
+    if (typeof ts === 'number' && !Number.isNaN(ts)) {
+      if (textRangeMain) { textRangeMain.value = String(ts); }
+      if (textValMain) { textValMain.textContent = ts + '%'; }
+    }
+  }
+  async function loadSizeMain(){
+    try {
+      const res = await fetch('/api/speakers/sizeMain');
+      const data = await res.json();
+      const cw = Number(data.cardWidth) || 360;
+      const ts = Number(data.textScale) || 100;
+      applySizeMain(cw, ts);
+    } catch(err) { console.warn('Failed to load main size', err); }
+  }
+  let sizePostTimerMain = null;
+  function postSizeMain(){
+    const cw = Number(widthRangeMain.value);
+    const ts = Number(textRangeMain.value);
+    fetch('/api/speakers/sizeMain', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({cardWidth: cw, textScale: ts}) })
+      .catch(err => console.warn('Failed to update main size', err));
+  }
+  if (widthRangeMain && textRangeMain){
+    const schedulePostMain = () => {
+      if (sizePostTimerMain) clearTimeout(sizePostTimerMain);
+      sizePostTimerMain = setTimeout(postSizeMain, 150);
+    };
+    widthRangeMain.addEventListener('input', () => applySizeMain(Number(widthRangeMain.value), undefined));
+    textRangeMain.addEventListener('input', () => applySizeMain(undefined, Number(textRangeMain.value)));
+    widthRangeMain.addEventListener('change', schedulePostMain);
+    textRangeMain.addEventListener('change', schedulePostMain);
+  }
+  loadSizeMain();
+
   // Fullscreen toggle
   function isFull(){ return !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement); }
   function enterFull(){
@@ -327,6 +382,10 @@
           const cw = Number(data.cardWidth);
           const ts = Number(data.textScale);
           applySize(Number.isFinite(cw) ? cw : undefined, Number.isFinite(ts) ? ts : undefined);
+        } else if (data && data.type === 'sizeMain') {
+          const cw = Number(data.cardWidth);
+          const ts = Number(data.textScale);
+          applySizeMain(Number.isFinite(cw) ? cw : undefined, Number.isFinite(ts) ? ts : undefined);
         }
       } catch(err) {
         // ignore malformed messages

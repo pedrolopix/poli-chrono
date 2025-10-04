@@ -72,7 +72,7 @@
       time.textContent = msToClock(sp.elapsedMillis || 0);
       const badge = document.createElement('div');
       badge.className = 'badge';
-      badge.textContent = sp.running ? 'running' : 'stopped';
+      badge.textContent = sp.running ? 'A falar' : '';
       content.appendChild(name);
       content.appendChild(time);
       content.appendChild(badge);
@@ -125,7 +125,12 @@
           render(data);
         } else if (data && data.type === 'title') {
           headerTitle.textContent = (typeof data.value === 'string') ? data.value : '';
+        } else if (data && data.type === 'sizeMain') {
+          const cw = Number(data.cardWidth);
+          const ts = Number(data.textScale);
+          applySize(Number.isFinite(cw) ? cw : undefined, Number.isFinite(ts) ? ts : undefined);
         } else if (data && data.type === 'size') {
+          // fallback: if audience-specific size isn't configured, accept generic size
           const cw = Number(data.cardWidth);
           const ts = Number(data.textScale);
           applySize(Number.isFinite(cw) ? cw : undefined, Number.isFinite(ts) ? ts : undefined);
